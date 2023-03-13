@@ -14,4 +14,4 @@ add_custom_target(
   COMMAND cat "${CMAKE_BINARY_DIR}/Testing/Temporary/MemoryChecker.*.log"
   WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
 
-add_subdirectory("./${MODULE}/${QUESTION}")
+add_subdirectory("./${CUR_MODULE}/${QUESTION}")
