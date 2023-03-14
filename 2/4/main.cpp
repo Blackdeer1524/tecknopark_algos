@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <cstdint>
 #include <inttypes.h>
 #include <iostream>
@@ -7,9 +6,11 @@
 #include <variant>
 
 #define min(x, y) (((x) < (y)) ? (x) : (y))
+#define abs(x)    ((x) < 0 ? -(x) : (x))
 
-auto binsearch(const int *array, uint64_t r, int item)
+auto binsearch(const int *array, uint64_t length, int item)
     -> std::tuple<uint64_t, uint64_t> {
+    auto     r = length;
     uint64_t l = 0;
 
     while (l <= r) {
@@ -18,14 +19,15 @@ auto binsearch(const int *array, uint64_t r, int item)
             l = mid + 1;
         } else if (array[mid] > item) {
             if (!mid) {
-                return std::tuple(0, min(1, r));
+                return std::tuple(0, min(1, length));
             }
             r = mid - 1;
         } else {
             return std::tuple(mid, mid);
         }
     }
-    return std::tuple(min(0, l - 2), min(l, r));
+    // min(l, l - 1) стоит против underflow
+    return std::tuple(min(l, l - 1), min(l, length));
 }
 
 int main() {
@@ -45,10 +47,11 @@ int main() {
         auto left      = std::get<0>(res);
         auto right     = std::get<1>(res);
         auto min_index = left;
-        int  min_value = A[min_index];
+        int  min_value = abs(b_item - A[min_index]);
         for (uint64_t j = left + 1; j <= right; ++j) {
-            if (A[j] < min_value) {
-                min_value = A[j];
+            auto difference = abs(A[j] - b_item);
+            if (difference < min_value) {
+                min_value = difference;
                 min_index = j;
             }
         }
