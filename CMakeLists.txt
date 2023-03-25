@@ -6,6 +6,13 @@ set(EX CACHE STRING "exercise")
 
 include(CTest)
 
+set(CMAKE_CXX_FLAGS_INIT "-Werror -Wall -Wextra -Wpedantic")
+set(CMAKE_CXX_FLAGS_INIT "--coverage -fno-exceptions -g -Wunused-result")
+
+set(CMAKE_CXX_FLAGS_DEBUG_INIT
+    "-fsanitize=address,undefined -fsanitize-undefined-trap-on-error")
+set(CMAKE_EXE_LINKER_FLAGS_INIT "-fsanitize=address,undefined -static-libasan")
+
 add_custom_target(
   test_memcheck
   COMMAND ${CMAKE_CTEST_COMMAND} --force-new-ctest-process --test-action
