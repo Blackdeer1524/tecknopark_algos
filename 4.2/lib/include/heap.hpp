@@ -22,14 +22,11 @@ static inline auto get_right_child_index(uint64_t parent_index) -> uint64_t {
 
 template <typename T>
 struct Heap {
-    explicit Heap(auto (*cmp)(const T &left, const T &right)->int,
-                  uint64_t max_size = std::numeric_limits<uint64_t>::max()) {
+    explicit Heap(auto(*cmp)(const T &left, const T &right)->int) {
         m_cmp      = cmp;
         m_length   = 0;
-        m_capacity = 10;
-        // будем иметь место под K лучших элементов + их детей + 1 под новые
-        // элементы
-        m_last_possible_index = (get_right_child_index(max_size - 1) + 1);
+        m_capacity = 1;
+        // будем иметь место под K лучших элементов + их детей - 1
         m_buffer = reinterpret_cast<T *>(operator new(sizeof(T) * m_capacity));
     }
 
@@ -47,11 +44,9 @@ struct Heap {
             }
             m_buffer = new_buffer;
         }
-        m_buffer[m_length] = item;
+        m_buffer[m_length] = std::move(item);
         this->shift_up(m_length);
-        if (m_length < m_last_possible_index) {
-            ++m_length;
-        }
+        ++m_length;
         return false;
     }
 
@@ -65,7 +60,7 @@ struct Heap {
         return res;
     }
 
-    auto get_min() const -> std::optional<const T &> {
+    auto get_min() -> std::optional<T> {
         if (m_length) {
             return m_buffer[0];
         }
@@ -76,9 +71,8 @@ struct Heap {
     T       *m_buffer;
     uint64_t m_length;
     uint64_t m_capacity;
-    uint64_t m_last_possible_index;
 
-    auto (*m_cmp)(const T &left, const T &right) -> int;
+    auto(*m_cmp)(const T &left, const T &right) -> int;
 
     auto shift_up(uint64_t shifting_item_index) -> void {
         while (shifting_item_index) {
