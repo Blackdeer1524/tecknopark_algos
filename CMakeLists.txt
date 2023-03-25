@@ -2,8 +2,7 @@ cmake_minimum_required(VERSION 3.22)
 project(tecknopark_algos CXX)
 set(CMAKE_CXX_STANDARD 20)
 
-set(CUR_MODULE CACHE STRING "module")
-set(QUESTION CACHE STRING "question")
+set(EX CACHE STRING "exercise")
 
 include(CTest)
 
@@ -14,4 +13,4 @@ add_custom_target(
   COMMAND cat "${CMAKE_BINARY_DIR}/Testing/Temporary/MemoryChecker.*.log"
   WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
 
-add_subdirectory("./${CUR_MODULE}/${QUESTION}")
+add_subdirectory("./${EX}")
