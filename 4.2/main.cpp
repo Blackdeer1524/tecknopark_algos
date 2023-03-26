@@ -1,9 +1,6 @@
 #include "heap.hpp"
-#include <array>
 #include <cstdint>
 #include <iostream>
-#include <pthread.h>
-#include <sys/types.h>
 #include <utility>
 
 using UserData = std::pair<uint64_t, uint64_t>;
@@ -23,29 +20,25 @@ int main() {
     if (N < K) {
         return -1;
     }
-    auto minheap = Heap<UserData>(min_heap_cmp);
+    auto maxheap = Heap<UserData>(min_heap_cmp);
     for (uint64_t i = 0; i < K; ++i) {
         UserData user_data;
         std::cin >> user_data.first >> user_data.second;
-        minheap.insert(std::move(user_data));
+        maxheap.push(std::move(user_data));
     }
 
-    auto heap_min = minheap.get_min().value().second;
+    auto heap_min = maxheap.get_min().value().second;
     for (uint64_t i = K; i < N; ++i) {
         UserData user_data;
         std::cin >> user_data.first >> user_data.second;
-        if (heap_min > user_data.second) {
-            minheap.pop_min();
-            heap_min = user_data.second;
-            minheap.insert(std::move(user_data));
+        if (heap_min < user_data.second) {
+            maxheap.push_pop(std::move(user_data));
+            heap_min = maxheap.get_min().value().second;
         }
     }
 
     for (uint64_t i = 0; i < K; ++i) {
-        auto res_opt = minheap.pop_min();
-        if (!res_opt.has_value()) {
-            break;
-        }
+        auto res_opt = maxheap.pop();
         std::cout << res_opt->first << ' ';
     }
 }
