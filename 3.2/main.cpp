@@ -34,21 +34,22 @@ struct Deck {
         return *this;
     }
 
+    auto push_front(int item) -> void {
+        front_index_ = (front_index_ == 0) ? capacity_ - 1 : front_index_ - 1;
+        if (front_index_ == back_index_) {
+            this->resize();
+            front_index_ = capacity_ - 1;
+        }
+
+        buffer_[front_index_] = item;
+    }
+
     auto push_back(int item) -> void {
         buffer_[back_index_] = item;
         back_index_          = (back_index_ + 1) % capacity_;
         if (back_index_ == front_index_) {
             this->resize();
         }
-    }
-
-    auto push_front(int item) -> void {
-        front_index_ = (front_index_ == 0) ? capacity_ - 1 : front_index_ - 1;
-        if (front_index_ == back_index_) {
-            this->resize();
-        }
-
-        buffer_[front_index_] = item;
     }
 
     [[nodiscard]] auto pop_front() -> std::tuple<int, bool> {
@@ -64,8 +65,8 @@ struct Deck {
         if (front_index_ == back_index_) {
             return std::make_tuple(0, true);
         }
-        auto res    = buffer_[back_index_];
         back_index_ = (back_index_ == 0) ? capacity_ - 1 : back_index_ - 1;
+        auto res    = buffer_[back_index_];
         return std::make_tuple(res, false);
     }
 
@@ -89,7 +90,7 @@ struct Deck {
                     n_items_before_front_index_exclusive * sizeof(int));
         delete[] buffer_;
         buffer_      = new_buffer;
-        back_index_  = 0;
+        back_index_  = capacity_ >> 1;
         front_index_ = 0;
     }
 };
