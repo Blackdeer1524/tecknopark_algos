@@ -2,13 +2,15 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
+#include <optional>
 #include <tuple>
 
 struct Deck {
     Deck() {
-        capacity_    = 5;
+        capacity_    = 2;
         buffer_      = new int[capacity_];
-        back_index_  = 0;
+        back_index_  = capacity_ - 1;
         front_index_ = 0;
     }
 
@@ -35,39 +37,39 @@ struct Deck {
     }
 
     auto push_front(int item) -> void {
-        front_index_ = (front_index_ == 0) ? capacity_ - 1 : front_index_ - 1;
-        if (front_index_ == back_index_) {
-            this->resize();
-            front_index_ = capacity_ - 1;
-        }
-
         buffer_[front_index_] = item;
+        front_index_          = (front_index_ + 1) % capacity_;
+        if (front_index_ > back_index_) {
+            this->resize();
+        }
     }
 
     auto push_back(int item) -> void {
         buffer_[back_index_] = item;
-        back_index_          = (back_index_ + 1) % capacity_;
-        if (back_index_ == front_index_) {
+        back_index_ = (back_index_ == 0) ? capacity_ - 1 : back_index_ - 1;
+        if (front_index_ > back_index_) {
             this->resize();
         }
     }
 
-    [[nodiscard]] auto pop_front() -> std::tuple<int, bool> {
-        if (front_index_ == back_index_) {
-            return std::make_tuple(0, true);
+    [[nodiscard]] auto pop_front() -> std::optional<int> {
+        auto new_front = (front_index_ == 0) ? capacity_ - 1 : front_index_ - 1;
+        if (new_front == back_index_) {
+            return std::nullopt;
         }
+        front_index_ = new_front;
         auto res     = buffer_[front_index_];
-        front_index_ = (front_index_ + 1) % capacity_;
-        return std::make_tuple(res, false);
+        return res;
     }
 
-    [[nodiscard]] auto pop_back() -> std::tuple<int, bool> {
-        if (front_index_ == back_index_) {
-            return std::make_tuple(0, true);
+    [[nodiscard]] auto pop_back() -> std::optional<int> {
+        auto new_back = (back_index_ + 1) % capacity_;
+        if (new_back == front_index_) {
+            return std::nullopt;
         }
-        back_index_ = (back_index_ == 0) ? capacity_ - 1 : back_index_ - 1;
+        back_index_ = new_back;
         auto res    = buffer_[back_index_];
-        return std::make_tuple(res, false);
+        return res;
     }
 
  private:
@@ -77,23 +79,67 @@ struct Deck {
     uint64_t front_index_;
 
     auto resize() -> void {
-        auto n_items_before_front_index_exclusive = front_index_;
-        auto n_items_after_front_index_inclusive  = capacity_ - front_index_;
-        capacity_ <<= 1;
+        auto new_buffer = new int[capacity_ << 1];
+        std::memcpy(new_buffer, buffer_, sizeof(int) * front_index_);
 
-        auto new_buffer = new int[capacity_];
-        std::memcpy(new_buffer,
-                    buffer_ + n_items_before_front_index_exclusive,
-                    n_items_after_front_index_inclusive * sizeof(int));
-        std::memcpy(new_buffer + n_items_after_front_index_inclusive,
-                    buffer_,
-                    n_items_before_front_index_exclusive * sizeof(int));
+        auto n_back_items = capacity_ - front_index_;
+        capacity_ <<= 1;
+        back_index_ = capacity_ - n_back_items - 1;
+
+        std::memcpy(new_buffer + back_index_ + 1,
+                    buffer_ + front_index_,
+                    sizeof(int) * n_back_items);
         delete[] buffer_;
-        buffer_      = new_buffer;
-        back_index_  = capacity_ >> 1;
-        front_index_ = 0;
+        buffer_ = new_buffer;
     }
 };
 
+enum Operation {
+    PushFront = 1,
+    PopFront,
+    PushBack,
+    PopBack,
+};
+
 auto main() -> int {
+    int N, operation, operand;
+    std::cin >> N;
+    auto deck = Deck();
+    for (uint64_t i = 0; i < N; ++i) {
+        std::cin >> operation >> operand;
+        switch (operation) {
+            case PushFront: {
+                deck.push_front(operand);
+                break;
+            }
+            case PushBack: {
+                deck.push_back(operand);
+                break;
+            }
+            case PopFront: {
+                auto res = deck.pop_front();
+                if (!(res.has_value() && res.value() == operand ||
+                      operand == -1 && !res.has_value())) {
+                    std::cout << "NO";
+                    exit(0);
+                }
+                break;
+            }
+            case PopBack: {
+                auto res = deck.pop_back();
+                if (!(res.has_value() && res.value() == operand ||
+                      operand == -1 && !res.has_value())) {
+                    std::cout << "NO";
+                    exit(0);
+                }
+                break;
+            }
+            default: {
+                std::cout << "UNKNOWN OPERATION: (" << operation << ", "
+                          << operand << ")";
+                exit(1);
+            }
+        }
+    }
+    std::cout << "YES";
 }
