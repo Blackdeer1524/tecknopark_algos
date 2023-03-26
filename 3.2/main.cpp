@@ -9,6 +9,7 @@
 struct Deck {
     Deck() {
         capacity_    = 2;
+        length_      = 0;
         buffer_      = new int[capacity_];
         back_index_  = capacity_ - 1;
         front_index_ = 0;
@@ -39,7 +40,8 @@ struct Deck {
     auto push_front(int item) -> void {
         buffer_[front_index_] = item;
         front_index_          = (front_index_ + 1) % capacity_;
-        if (front_index_ > back_index_) {
+        ++length_;
+        if (length_ == capacity_) {
             this->resize();
         }
     }
@@ -47,34 +49,34 @@ struct Deck {
     auto push_back(int item) -> void {
         buffer_[back_index_] = item;
         back_index_ = (back_index_ == 0) ? capacity_ - 1 : back_index_ - 1;
-        if (front_index_ > back_index_) {
+        ++length_;
+        if (length_ == capacity_) {
             this->resize();
         }
     }
 
     [[nodiscard]] auto pop_front() -> std::optional<int> {
-        auto new_front = (front_index_ == 0) ? capacity_ - 1 : front_index_ - 1;
-        if (new_front == back_index_) {
+        if (!length_) {
             return std::nullopt;
         }
-        front_index_ = new_front;
-        auto res     = buffer_[front_index_];
-        return res;
+        --length_;
+        front_index_ = (front_index_ == 0) ? capacity_ - 1 : front_index_ - 1;
+        return buffer_[front_index_];
     }
 
     [[nodiscard]] auto pop_back() -> std::optional<int> {
-        auto new_back = (back_index_ + 1) % capacity_;
-        if (new_back == front_index_) {
+        if (!length_) {
             return std::nullopt;
         }
-        back_index_ = new_back;
-        auto res    = buffer_[back_index_];
-        return res;
+        --length_;
+        back_index_ = (back_index_ + 1) % capacity_;
+        return buffer_[back_index_];
     }
 
  private:
     int     *buffer_;
     uint64_t capacity_;
+    uint64_t length_;
     uint64_t back_index_;
     uint64_t front_index_;
 
