@@ -1,14 +1,9 @@
-#include <cstddef>
 #include <cstdint>
-#include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <limits>
-#include <ostream>
 #include <string.h>
-#include <string>
-
-// IMAGINE писать не safe код
+#include <utility>
 
 static constexpr int ALPHABET_SIZE =
     static_cast<int>(std::numeric_limits<unsigned char>::max()) + 1;
@@ -19,10 +14,25 @@ struct String {
         length_ = 0;
     }
 
-    String(char *str, uint64_t length) {
-        buffer_ = new char[length];
-        strncpy(buffer_, str, length);
+    String(const char *str, uint64_t length) {
+        buffer_ = new char[length + 1];
+        strncpy(buffer_, str, length + 1);
         length_ = length;
+    }
+
+    String(const String &other) = delete;
+
+    ~String() {
+        delete[] buffer_;
+    }
+
+    auto operator=(String &&other) -> String & {
+        delete[] buffer_;
+        buffer_       = other.buffer_;
+        length_       = other.length_;
+        other.buffer_ = nullptr;
+        other.length_ = 0;
+        return *this;
     }
 
     auto get_char(uint64_t index) const -> int {
@@ -32,8 +42,8 @@ struct String {
         return buffer_[index] - std::numeric_limits<char>::min();
     }
 
-    auto c_str() -> const char * {
-        return reinterpret_cast<char *>(buffer_);
+    auto c_str() const -> const char * {
+        return buffer_;
     }
 
  private:
@@ -55,7 +65,7 @@ msd_string_sort_internals(String **A,  // что сортируем
 
     uint64_t buffer[ALPHABET_SIZE] = {};
     for (uint64_t i = l; i <= r; ++i) {
-        auto str = A_buffer[i];
+        auto &str = A_buffer[i];
         ++buffer[str.get_char(sorting_index)];
     }
     for (int i = 1; i < ALPHABET_SIZE; i++) {
@@ -64,30 +74,30 @@ msd_string_sort_internals(String **A,  // что сортируем
 
     for (uint64_t i = r; i > l; --i) {
         auto cur_char                = A_buffer[i].get_char(sorting_index);
-        B_buffer[--buffer[cur_char]] = A_buffer[i];
+        B_buffer[--buffer[cur_char]] = std::move(A_buffer[i]);
     }
     auto cur_char                = A_buffer[l].get_char(sorting_index);
-    B_buffer[--buffer[cur_char]] = A_buffer[l];
+    B_buffer[--buffer[cur_char]] = std::move(A_buffer[l]);
 
-    auto placeholder = *A;
-    *A               = *B;
-    *B               = placeholder;
+    for (uint64_t i = l; i <= r; ++i) {
+        A_buffer[i] = std::move(B_buffer[i - l]);
+    }
 
-    // auto new_l                = l;
-    // auto sorting_group_letter = A_buffer[l].get_char(sorting_index);
-    // for (uint64_t i = l + 1; i <= r; ++i) {
-    //     auto current_letter = A_buffer[i].get_char(sorting_index);
-    //     if (current_letter != sorting_group_letter) {
-    //         msd_string_sort_internals(A, B, new_l, i - 1, sorting_index + 1);
-    //         new_l                = i;
-    //         sorting_group_letter = current_letter;
-    //     }
-    // }
-    // if (sorting_group_letter == '\0') {
-    //     return;
-    // }
-    //
-    // msd_string_sort_internals(A, B, new_l, r, sorting_index + 1);
+    auto new_l                = l;
+    auto sorting_group_letter = A_buffer[l].get_char(sorting_index);
+    for (uint64_t i = l + 1; i <= r; ++i) {
+        auto current_letter = A_buffer[i].get_char(sorting_index);
+        if (current_letter != sorting_group_letter) {
+            msd_string_sort_internals(A, B, new_l, i - 1, sorting_index + 1);
+            new_l                = i;
+            sorting_group_letter = current_letter;
+        }
+    }
+    if (sorting_group_letter == 0) {
+        return;
+    }
+
+    msd_string_sort_internals(A, B, new_l, r, sorting_index + 1);
 }
 
 auto mds_string_sort(String *A, uint64_t length) -> void {
@@ -101,35 +111,30 @@ auto mds_string_sort(String *A, uint64_t length) -> void {
     delete[] B;
 }
 
-static constexpr uint64_t STRING_READING_BUFFER_LENGTH = 0x1000;
-
 auto main() -> int {
     char    *line = nullptr;
     uint64_t len  = 0;
 
     uint64_t cont_capacity = 1;
-    String  *container =
-        reinterpret_cast<String *>(std::malloc(sizeof(String) * cont_capacity));
-    uint64_t cont_len = 0;
-    for (int i = 0; i < 4; ++i) {
-        // while (true) {
+    auto     container     = new String[cont_capacity];
+    uint64_t cont_len      = 0;
+    while (true) {
         ssize_t nread = getline(&line, &len, stdin);
-        if (cont_len == cont_capacity) {
-            cont_capacity <<= 1;
-            String *new_container = reinterpret_cast<String *>(
-                std::realloc(container, sizeof(String) * cont_capacity));
-            if (new_container == NULL) {
-                std::free(line);
-                std::free(container);
-                return EXIT_FAILURE;
-            }
-            container = new_container;
-        }
-        line[nread - 1] = '\0';
-
-        if (line[0] == '\0') {
+        if (nread == -1) {
             break;
         }
+
+        if (cont_len == cont_capacity) {
+            String *new_container = new String[cont_capacity << 1];
+            for (uint64_t i = 0; i < cont_capacity; i++) {
+                new_container[i] = std::move(container[i]);
+            }
+            delete[] container;
+            container = new_container;
+            cont_capacity <<= 1;
+        }
+
+        line[--nread]         = '\0';
         container[cont_len++] = String(line, nread);
     }
     mds_string_sort(container, cont_len);
@@ -138,5 +143,5 @@ auto main() -> int {
     }
 
     free(line);
-    std::free(container);
+    delete[] container;
 }
