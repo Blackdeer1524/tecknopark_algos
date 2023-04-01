@@ -1,53 +1,58 @@
-#include <cstdint>
 #include <inttypes.h>
 #include <iostream>
-#include <random>
-#include <sys/types.h>
 #include <utility>
 
 using std::pair;
 
 template <typename T>
-auto partition(T       *array,
-               uint64_t l,
-               uint64_t r,
-               auto(*cmp)(const T &left, const T &right)->int) -> uint64_t {
-    auto     pivot = array[r];
-    uint64_t j     = l - 1;
-    for (uint64_t i = l; i <= r - 1; ++i) {
-        if (cmp(array[i], pivot) <= 0) {
-            std::swap(array[++j], array[i]);
+auto merge(T *array, uint64_t l, uint64_t q, uint64_t r,
+           auto(*cmp)(const T &left, const T &right)->int) {
+    if (l >= r || q > r) {
+        return;
+    }
+    uint64_t left_index        = 0;
+    auto     left_part_length  = q - l + 1;
+    auto     left_part         = new T[left_part_length];
+
+    uint64_t right_index       = 0;
+    auto     right_part_length = r - q;
+    auto     right_part        = new T[right_part_length];
+
+    for (uint64_t i = l; i <= q; ++i) {
+        left_part[i - l] = std::move(array[i]);
+    }
+    for (uint64_t i = q + 1; i <= r; ++i) {
+        right_part[i - q - 1] = std::move(array[i]);
+    }
+
+    while (left_index < left_part_length && right_index < right_part_length) {
+        if (cmp(left_part[left_index], right_part[right_index]) < 0) {
+            array[l++] = std::move(left_part[left_index++]);
+        } else {
+            array[l++] = std::move(right_part[right_index++]);
         }
     }
-    std::swap(array[++j], array[r]);
-    return j;
+    while (left_index < left_part_length) {
+        array[l++] = left_part[left_index++];
+    }
+    while (right_index < right_part_length) {
+        array[l++] = right_part[right_index++];
+    }
+
+    delete[] left_part;
+    delete[] right_part;
 }
 
 template <typename T>
-auto random_partition(T       *array,
-                      uint64_t l,
-                      uint64_t r,
-                      auto(*cmp)(const T &left, const T &right)->int)
-    -> uint64_t {
-    auto     subarray_length    = r - l + 1;
-    uint64_t random_pivot_index = rand() % subarray_length;
-    std::swap(array[r], array[l + random_pivot_index]);
-    return partition(array, l, r, cmp);
-}
-
-template <typename T>
-auto quick_sort(T       *array,
-                uint64_t l,
-                uint64_t r,
+auto merge_sort(T *array, uint64_t l, uint64_t r,
                 auto(*cmp)(const T &left, const T &right)->int) -> void {
     if (l >= r) {
         return;
     }
-    auto q = random_partition(array, l, r, cmp);
-    if (q) {
-        quick_sort(array, l, q - 1, cmp);
-    }
-    quick_sort(array, q + 1, r, cmp);
+    auto q = l + ((r - l) >> 1);
+    merge_sort(array, l, q, cmp);
+    merge_sort(array, q + 1, r, cmp);
+    merge(array, l, q, r, cmp);
 }
 
 auto main() -> int {
@@ -73,14 +78,14 @@ auto main() -> int {
         return 0;
     };
 
-    quick_sort<pair<int, int>>(array, 0, N - 1, cmp);
+    merge_sort<pair<int, int>>(array, 0, N - 1, cmp);
     auto    segment_start = array[0].first;  // always positive
     int64_t coloring_coef = 1;
     int64_t result        = 0;
     for (uint64_t i = 1; i < N; ++i) {
-        auto    current_segment_point = array[i];
-        int64_t length = current_segment_point.first - segment_start;
+        auto current_segment_point = array[i];
         if (coloring_coef == 1) {
+            int64_t length = current_segment_point.first - segment_start;
             result += length;
         }
         coloring_coef += current_segment_point.second;
