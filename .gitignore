@@ -1,4 +1,9 @@
 *
+!*/
 !CMakeLists.txt
 !.gitignore
+!/lib/**
+!/tests/**
+!main.cpp
+!submission.cpp
 !README.md
