@@ -1,4 +1,7 @@
 *
+!*/
 !CMakeLists.txt
 !.gitignore
 !README.md
+!main.cpp
+!/lib/**
