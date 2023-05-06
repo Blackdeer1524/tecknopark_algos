@@ -33,17 +33,19 @@ auto HashMap::Item::remove() -> void {
     is_removed_ = true;
 }
 
-auto HashMap::find_item(const std::string &item) -> std::pair<bool, uint64_t> {
-    uint64_t insertion_index = main_hash_function_(item) % storage_.capacity();
+auto HashMap::find_item(const std::string &item, const storage_t &src)
+    -> std::pair<bool, uint64_t> {
+    uint64_t insertion_index = main_hash_function_(item) % src.capacity();
+    uint64_t initial_hash    = insertion_index;
     uint64_t step =
-        std::max(resolver_hash_function_(item) % storage_.capacity(), 1zu);
-    while (true) {
-        auto insertion_place     = storage_.at(insertion_index);
+        std::max(resolver_hash_function_(item) % src.capacity(), 1zu);
+    for (uint64_t i = 0; i < src.capacity(); ++i) {
+        auto insertion_place     = src.at(insertion_index);
         auto insertion_place_opt = insertion_place.get_value_opt();
 
         if (!insertion_place_opt.has_value()) {
             if (!insertion_place.is_removed()) {
-                return {false, 0};
+                return {false, insertion_index};
             }
         } else {
             auto value = insertion_place_opt.value();
@@ -51,9 +53,9 @@ auto HashMap::find_item(const std::string &item) -> std::pair<bool, uint64_t> {
                 return {true, insertion_index};
             }
         }
-        insertion_index = (insertion_index + step) % storage_.size();
+        insertion_index = (insertion_index + step) % src.size();
     }
-    return {true, 0};
+    return {false, initial_hash};
 }
 
 auto HashMap::resize() -> void {
@@ -72,7 +74,7 @@ auto HashMap::remove(const std::string &item) -> bool {
     if (storage_.empty()) {
         return true;
     }
-    auto [found, index] = find_item(item);
+    auto [found, index] = find_item(item, storage_);
     if (!found) {
         return true;
     }
@@ -87,45 +89,47 @@ auto HashMap::insert(std::string &&item) -> bool {
         resize();
     }
     auto found_existing = insert_with_resolution(std::move(item), storage_);
-    if (!found_existing) {
-        ++size_;
+    if (found_existing) {
+        return true;
     }
-    return found_existing;
+    ++size_;
+    return false;
 }
 
 // Вариант 2
 // Для разрешения коллизий используйте двойное хеширование.
 auto HashMap::insert_with_resolution(std::string &&item, storage_t &dst)
     -> bool {
-    uint64_t insertion_index = main_hash_function_(item) % dst.capacity();
-    uint64_t step =
-        std::max(resolver_hash_function_(item) % dst.capacity(), 1zu);
-    while (true) {
-        auto insertion_place_opt = dst.at(insertion_index).get_value_opt();
-        if (!insertion_place_opt.has_value()) {
-            dst.at(insertion_index) = std::move(HashMap::Item(std::move(item)));
-            return false;
-        }
-        auto value = insertion_place_opt.value();
-        if (value == item) {
-            return true;
-        }
-        insertion_index = (insertion_index + step) % dst.size();
+    auto [found_existing, index] = find_item(item, dst);
+    if (found_existing) {
+        return true;
     }
-    return true;
+    dst.at(index) = std::move(HashMap::Item(std::move(item)));
+    return false;
 }
 
 auto HashMap::contains(const std::string &key) -> bool {
-    auto [found, _] = find_item(key);
+    auto [found, _] = find_item(key, storage_);
     return found;
 }
 
+#include <iomanip>  // std::setw
+
 auto HashMap::print() -> void {
-    std::cout << "Map(" << size_ << ", " << storage_.capacity() << "){ ";
+    std::cout << "Map(" << size_ << ", " << storage_.capacity() << ")"
+              << std::endl
+              << "{";
     for (auto &item : storage_) {
         if (item.get_value_opt().has_value()) {
-            std::cout << item.get_value_opt().value() << ", ";
+            std::cout << std::setw(4) << item.get_value_opt().value() << " ";
+        } else {
+            std::cout << std::setw(4) << 'X' << " ";
         }
+    }
+    std::cout << "}" << std::endl << "{";
+
+    for (auto &item : storage_) {
+        std::cout << std::setw(4) << item.is_removed() << " ";
     }
     std::cout << "}";
 }

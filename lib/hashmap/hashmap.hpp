@@ -69,7 +69,7 @@ class HashMap {
 
     auto insert_with_resolution(std::string &&item, storage_t &dst) -> bool;
 
-    auto find_item(const std::string &item) -> std::pair<bool, uint64_t>;
+    auto find_item(const std::string &item, const storage_t &src) -> std::pair<bool, uint64_t>;
 };
 
 #endif  // !HASHMAP_H

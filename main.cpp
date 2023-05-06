@@ -9,8 +9,8 @@ auto hash1(const std::string &str) -> uint64_t {
     for (unsigned char c : str) {
         res = res * a + c;
     }
-    return 0zu;
-    // return res;
+    // return 0zu;
+    return res;
 }
 
 auto hash2(const std::string &str) -> uint64_t {
@@ -18,6 +18,7 @@ auto hash2(const std::string &str) -> uint64_t {
     for (unsigned char c : str) {
         res = res + c;
     }
+    // return 1;
     return 2 * res + 1;
 }
 
@@ -39,8 +40,8 @@ auto main() -> int {
                 } else {
                     std::cout << "OK" << std::endl;
                 }
-                map.print();
-                std::cout << std::endl;
+                // map.print();
+                // std::cout << std::endl;
             } break;
             case '?': {
                 auto flag = map.contains(t);
@@ -57,11 +58,11 @@ auto main() -> int {
                 } else {
                     std::cout << "OK" << std::endl;
                 }
-                map.print();
-                std::cout << std::endl;
+                // map.print();
+                // std::cout << std::endl;
             } break;
             default:
-                exit(0);
+                std::cout << "Unknown operation" << std::endl;
                 break;
         }
     }
