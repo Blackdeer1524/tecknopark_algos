@@ -1,6 +1,9 @@
 #include "hashmap.hpp"
 
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
+#include <iostream>
 #include <optional>
 #include <string>
 #include <utility>
@@ -8,14 +11,57 @@
 HashMap::HashMap(hash_function_t main_hash_function,
                  hash_function_t resolver_hash_function)
     : main_hash_function_(std::move(main_hash_function)),
-      resolver_hash_function_(std::move(resolver_hash_function)) {
+      resolver_hash_function_(std::move(resolver_hash_function)),
+      storage_(HASHTABLE_INIT_SIZE), deleted_(HASHTABLE_INIT_SIZE) {
+}
+
+HashMap::Item::Item(std::optional<std::string> &&value)
+    : value_(value), is_removed_(false) {
+}
+
+auto HashMap::Item::get_value_opt() const
+    -> const std::optional<std::string> & {
+    return value_;
+}
+
+auto HashMap::Item::is_removed() const -> bool {
+    return is_removed_;
+}
+
+auto HashMap::Item::remove() -> void {
+    value_.reset();
+    is_removed_ = true;
+}
+
+auto HashMap::find_item(const std::string &item) -> std::pair<bool, uint64_t> {
+    uint64_t insertion_index = main_hash_function_(item) % storage_.capacity();
+    uint64_t step =
+        std::max(resolver_hash_function_(item) % storage_.capacity(), 1zu);
+    while (true) {
+        auto insertion_place     = storage_.at(insertion_index);
+        auto insertion_place_opt = insertion_place.get_value_opt();
+
+        if (!insertion_place_opt.has_value()) {
+            if (!insertion_place.is_removed()) {
+                return {false, 0};
+            }
+        } else {
+            auto value = insertion_place_opt.value();
+            if (value == item) {
+                return {true, insertion_index};
+            }
+        }
+        insertion_index = (insertion_index + step) % storage_.size();
+    }
+    return {true, 0};
 }
 
 auto HashMap::resize() -> void {
-    storage_t new_storage{storage_.size() << 1};
+    storage_t new_storage{storage_.capacity() << 1};
     for (auto &item : storage_) {
-        if (item.has_value()) {
-            auto val = std::exchange(item, std::nullopt).value();
+        const auto &item_opt = item.get_value_opt();
+        if (item_opt.has_value()) {
+            auto val = item_opt.value();
             insert_with_resolution(std::move(val), new_storage);
         }
     }
@@ -26,56 +72,57 @@ auto HashMap::remove(const std::string &item) -> bool {
     if (storage_.empty()) {
         return true;
     }
-    auto [found, index] = get_insertion_index(item, storage_);
+    auto [found, index] = find_item(item);
     if (!found) {
         return true;
     }
-    auto &found_item = storage_.at(index);
-    std::exchange(found_item, std::nullopt);
+    storage_.at(index).remove();
     --size_;
     return false;
 }
 
 auto HashMap::insert(std::string &&item) -> bool {
+    ++size_;
     if (static_cast<double>(size_) / static_cast<double>(storage_.size()) >=
         GROW_FRACTION) {
         resize();
     }
-    ++size_;
     return insert_with_resolution(std::move(item), storage_);
 }
 
-auto HashMap::get_insertion_index(const std::string &item, const storage_t &src)
-    -> std::pair<bool, uint64_t> {
-    uint64_t insertion_index = main_hash_function_(item) % src.size();
-    uint64_t step            = resolver_hash_function_(item) % src.size();
-    while (true) {
-        auto insertion_place = src.at(insertion_index);
-        if (!insertion_place.has_value()) {
-            return std::make_pair(false, insertion_index);
-        }
-        auto value = insertion_place.value();
-        if (value == item) {
-            break;
-        }
-        insertion_index = (insertion_index + step) % src.size();
-    }
-    return std::make_pair(true, 0);
-}
-
+// Вариант 2
+// Для разрешения коллизий используйте двойное хеширование.
 auto HashMap::insert_with_resolution(std::string &&item, storage_t &dst)
     -> bool {
-    // Вариант 2
-    // Для разрешения коллизий используйте двойное хеширование.
-    auto [found, insertion_index] = get_insertion_index(item, dst);
-    if (found) {
-        return true;
+    uint64_t insertion_index = main_hash_function_(item) % dst.capacity();
+    uint64_t step =
+        std::max(resolver_hash_function_(item) % dst.capacity(), 1zu);
+    while (true) {
+        auto insertion_place_opt = dst.at(insertion_index).get_value_opt();
+        if (!insertion_place_opt.has_value()) {
+            dst.at(insertion_index) = std::move(HashMap::Item(std::move(item)));
+            return false;
+        }
+        auto value = insertion_place_opt.value();
+        if (value == item) {
+            return true;
+        }
+        insertion_index = (insertion_index + step) % dst.size();
     }
-    dst.at(insertion_index) = item;
-    return false;
+    return true;
 }
 
 auto HashMap::contains(const std::string &key) -> bool {
-    auto [found, _] = get_insertion_index(key, storage_);
+    auto [found, _] = find_item(key);
     return found;
+}
+
+auto HashMap::print() -> void {
+    std::cout << "{ ";
+    for (auto &item : storage_) {
+        if (item.get_value_opt().has_value()) {
+            std::cout << item.get_value_opt().value() << ", ";
+        }
+    }
+    std::cout << "}";
 }
