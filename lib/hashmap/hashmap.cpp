@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <iostream>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <utility>
 
@@ -33,6 +34,7 @@ auto HashMap::Item::remove() -> void {
     is_removed_ = true;
 }
 
+// all right
 auto HashMap::find_item(const std::string &item, const storage_t &src)
     -> std::pair<bool, uint64_t> {
     uint64_t insertion_index = main_hash_function_(item) % src.capacity();
@@ -42,7 +44,6 @@ auto HashMap::find_item(const std::string &item, const storage_t &src)
     for (uint64_t i = 0; i < src.capacity(); ++i) {
         auto insertion_place     = src.at(insertion_index);
         auto insertion_place_opt = insertion_place.get_value_opt();
-
         if (!insertion_place_opt.has_value()) {
             if (!insertion_place.is_removed()) {
                 return {false, insertion_index};
@@ -53,13 +54,14 @@ auto HashMap::find_item(const std::string &item, const storage_t &src)
                 return {true, insertion_index};
             }
         }
-        insertion_index = (insertion_index + step) % src.size();
+        insertion_index = (insertion_index + step) % src.capacity();
     }
-    return {false, initial_hash};
+    throw std::runtime_error("find_item unreachable");
 }
 
+// all right
 auto HashMap::resize() -> void {
-    storage_t new_storage{storage_.capacity() << 1};
+    storage_t new_storage(storage_.capacity() << 1);
     for (auto &item : storage_) {
         const auto &item_opt = item.get_value_opt();
         if (item_opt.has_value()) {
