@@ -56,7 +56,6 @@ class HashMap {
 
     static constexpr int    HASHTABLE_INIT_SIZE = 8;
     static constexpr double GROW_FRACTION       = 0.75;
-
     hash_function_t         main_hash_function_;
     hash_function_t         resolver_hash_function_;
     storage_t               storage_;

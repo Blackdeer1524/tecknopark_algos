@@ -82,12 +82,15 @@ auto HashMap::remove(const std::string &item) -> bool {
 }
 
 auto HashMap::insert(std::string &&item) -> bool {
-    ++size_;
-    if (static_cast<double>(size_) / static_cast<double>(storage_.size()) >=
+    if (static_cast<double>(size_) / static_cast<double>(storage_.capacity()) >=
         GROW_FRACTION) {
         resize();
     }
-    return insert_with_resolution(std::move(item), storage_);
+    auto found_existing = insert_with_resolution(std::move(item), storage_);
+    if (!found_existing) {
+        ++size_;
+    }
+    return found_existing;
 }
 
 // Вариант 2
@@ -118,7 +121,7 @@ auto HashMap::contains(const std::string &key) -> bool {
 }
 
 auto HashMap::print() -> void {
-    std::cout << "{ ";
+    std::cout << "Map(" << size_ << ", " << storage_.capacity() << "){ ";
     for (auto &item : storage_) {
         if (item.get_value_opt().has_value()) {
             std::cout << item.get_value_opt().value() << ", ";
