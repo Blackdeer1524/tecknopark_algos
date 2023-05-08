@@ -11,9 +11,8 @@
 #include <utility>
 #include <vector>
 
-// template <typename T>
-using T = int;
-
+// using T = uint32_t;
+template <typename T>
 class BTree {
  public:
     static auto build(uint64_t t, std::function<int(const T &, const T &)> cmp)
@@ -79,7 +78,7 @@ class BTree {
             while (i < size() && cmp_(k, keys_.at(i)) > 0) {
                 ++i;
             }
-            if (i < size() && k == keys_.at(i)) {
+            if (i < size() && cmp_(k, keys_.at(i)) == 0) {
                 return true;
             }
             if (leaf_) {
@@ -131,28 +130,28 @@ class BTree {
                 keys_.resize(size() + 1);
                 children_.resize(size() + 1);
                 if (size() > 1) {
-                    while (i > 0 && k < keys_.at(i)) {
+                    while (i > 0 && cmp_(k, keys_.at(i)) < 0) {
                         keys_.at(i + 1) = keys_.at(i);
                         --i;
                     }
-                    if (i == 0 && k < keys_.at(0)) {
+                    if (i == 0 && cmp_(k, keys_.at(0)) < 0) {
                         keys_.at(i + 1) = keys_.at(i);
                         --i;
                     }
                 }
                 keys_.at(i + 1) = k;
             } else {
-                while (i > 0 && k < keys_.at(i)) {
+                while (i > 0 && cmp_(k, keys_.at(i)) < 0) {
                     --i;
                 }
-                if (i == 0 && k < keys_.at(0)) {
+                if (i == 0 && cmp_(k, keys_.at(0)) < 0) {
                     --i;
                 }
                 ++i;
                 auto *child = children_.at(i).get();
                 if (child->full()) {
                     split_full_child(i);
-                    if (k > keys_.at(i)) {
+                    if (cmp_(k, keys_.at(i)) > 0) {
                         ++i;
                         child = children_.at(i).get();
                     }
