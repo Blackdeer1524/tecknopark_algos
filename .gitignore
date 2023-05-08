@@ -4,4 +4,5 @@
 !.gitignore
 !README.md
 !main.cpp
+!submission.cpp
 !lib/**
