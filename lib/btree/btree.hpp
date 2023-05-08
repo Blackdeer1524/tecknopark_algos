@@ -98,7 +98,7 @@ class BTree {
                     new_node->children_.at(i) =
                         std::move(child->children_.at(i + t_));
                 }
-                child->children_.resize(t_ - 1);
+                child->children_.resize(t_);
             }
             auto median = std::move(child->keys_.at(t_ - 1));
             child->keys_.resize(t_ - 1);
@@ -146,10 +146,11 @@ class BTree {
                 }
                 ++i;
                 auto *child = children_.at(i).get();
-                if (child->size() == t_ << 1) {
+                if (child->full()) {
                     split_full_child(i);
                     if (k > keys_.at(i)) {
                         ++i;
+                        child = children_.at(i).get();
                     }
                 }
                 child->insert_nonfull(std::move(k));
