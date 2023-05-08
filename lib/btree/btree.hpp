@@ -11,11 +11,12 @@
 #include <utility>
 #include <vector>
 
+// template <typename T>
 using T = int;
 
 class BTree {
  public:
-    static auto build(uint64_t t, std::function<int(T &, T &)> cmp)
+    static auto build(uint64_t t, std::function<int(const T &, const T &)> cmp)
         -> std::unique_ptr<BTree> {
         auto tree = std::unique_ptr<BTree>(nullptr);
         if (t <= 1) {
@@ -59,20 +60,23 @@ class BTree {
     }
 
  private:
-    BTree(uint64_t t, std::function<int(T &, T &)> cmp)
+    BTree(uint64_t t, std::function<int(const T &, const T &)> cmp)
         : t_(t), cmp_(std::move(cmp)),
-          root_(std::make_unique<Node>(0, t, true)) {
+          root_(std::make_unique<Node>(0, t, true, std::move(cmp))) {
     }
 
     class Node {
      public:
-        explicit Node(uint64_t n, uint64_t t, bool leaf)
-            : leaf_(leaf), t_(t), keys_(n), children_(n + 1) {
+        explicit Node(uint64_t                                        n,
+                      uint64_t                                        t,
+                      bool                                            leaf,
+                      const std::function<int(const T &, const T &)> &cmp)
+            : leaf_(leaf), t_(t), keys_(n), children_(n + 1), cmp_(cmp) {
         }
 
         [[nodiscard]] auto search(const T &k) const -> bool {
             uint64_t i = 0;
-            while (i < size() && k > keys_.at(i)) {
+            while (i < size() && cmp_(k, keys_.at(i)) > 0) {
                 ++i;
             }
             if (i < size() && k == keys_.at(i)) {
@@ -87,7 +91,7 @@ class BTree {
         auto split_full_child(uint64_t child_index) -> void {
             Node                 *child = children_.at(child_index).get();
             std::unique_ptr<Node> new_node =
-                std::make_unique<Node>(t_ - 1, t_, child->leaf_);
+                std::make_unique<Node>(t_ - 1, t_, child->leaf_, cmp_);
 
             for (uint64_t i = 0; i < t_ - 1; ++i) {
                 new_node->keys_.at(i) = std::move(child->keys_.at(i + t_));
@@ -166,22 +170,23 @@ class BTree {
         }
 
         // private:
-        uint64_t                           t_;
-        bool                               leaf_;
-        std::vector<T>                     keys_;
-        std::vector<std::unique_ptr<Node>> children_;
+        uint64_t                                        t_;
+        bool                                            leaf_;
+        std::vector<T>                                  keys_;
+        std::vector<std::unique_ptr<Node>>              children_;
+        const std::function<int(const T &, const T &)> &cmp_;
     };
 
     auto split_root() -> void {
-        auto new_root             = std::make_unique<Node>(0, t_, false);
+        auto new_root             = std::make_unique<Node>(0, t_, false, cmp_);
         new_root->children_.at(0) = std::move(root_);
         root_                     = std::move(new_root);
         root_->split_full_child(0);
     }
 
-    std::unique_ptr<Node>        root_;
-    uint64_t                     t_;
-    std::function<int(T &, T &)> cmp_;
+    std::unique_ptr<Node>                    root_;
+    uint64_t                                 t_;
+    std::function<int(const T &, const T &)> cmp_;
 };
 
 #endif  // !BTREE_H
