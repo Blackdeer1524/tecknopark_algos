@@ -14,10 +14,12 @@ set(CMAKE_CXX_FLAGS_DEBUG_INIT
 set(CMAKE_EXE_LINKER_FLAGS_INIT "-fsanitize=address,undefined -static-libasan")
 
 add_custom_target(
-  test_memcheck
-  COMMAND ${CMAKE_CTEST_COMMAND} --force-new-ctest-process --test-action
-          memcheck
-  COMMAND cat "${CMAKE_BINARY_DIR}/Testing/Temporary/MemoryChecker.*.log"
-  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
+    test_memcheck
+    COMMAND ${CMAKE_CTEST_COMMAND} --force-new-ctest-process --test-action
+    memcheck
+    COMMAND cat "${CMAKE_BINARY_DIR}/Testing/Temporary/MemoryChecker.*.log"
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
 
-add_subdirectory("./${EX}")
+add_subdirectory(lib)
+add_executable(main main.cpp)
+target_link_libraries(main avltree)
