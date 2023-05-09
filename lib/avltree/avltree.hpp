@@ -18,6 +18,29 @@
 using T = int;
 
 class AVLTree {
+ public:
+    using comparison_fn_t = std::function<int(const T &, const T &)>;
+
+    explicit AVLTree(comparison_fn_t cmp) : cmp_(std::move(cmp)) {
+    }
+
+    auto insert(T &&item) -> void {
+        root_ = insert_aux(std::move(root_), std::move(item));
+    }
+
+    auto remove(const T &item) -> void {
+        root_ = remove_aux(std::move(root_), item);
+    }
+
+    auto find(uint64_t statistic) -> std::optional<T> {
+        return find_aux(root_.get(), statistic);
+    }
+
+    auto in_order_print() {
+        print(root_.get(), 0);
+    }
+
+ protected:
     class Node {
      public:
         enum class BALANCING_FACTOR {
@@ -62,48 +85,29 @@ class AVLTree {
         [[nodiscard]] auto bfactor() const -> BALANCING_FACTOR {
             auto left_height  = left_ == nullptr ? 0 : left_->height_;
             auto right_height = right_ == nullptr ? 0 : right_->height_;
-            if (left_height > right_height) {
-                switch (left_height - right_height) {
-                    case 0:
-                        return BALANCING_FACTOR::NEUTRAL;
-                    case 1:
-                        return BALANCING_FACTOR::POSITIVE_ONE;
-                    case 2:
-                        return BALANCING_FACTOR::POSITIVE_TWO;
-                    default:
-                        break;
-                }
-            } else {
-                switch (right_height - left_height) {
-                    case 0:
-                        return BALANCING_FACTOR::NEUTRAL;
-                    case 1:
-                        return BALANCING_FACTOR::NEGATIVE_ONE;
-                    case 2:
-                        return BALANCING_FACTOR::NEGATIVE_TWO;
-                    default:
-                        break;
-                }
+            switch (left_height - right_height) {
+                case -2:
+                    return BALANCING_FACTOR::NEGATIVE_TWO;
+                case -1:
+                    return BALANCING_FACTOR::NEGATIVE_ONE;
+                case 0:
+                    return BALANCING_FACTOR::NEUTRAL;
+                case 1:
+                    return BALANCING_FACTOR::POSITIVE_ONE;
+                case 2:
+                    return BALANCING_FACTOR::POSITIVE_TWO;
+                default:
+                    break;
             }
             throw std::runtime_error("unreachable");
         }
     };
 
- public:
-    using comparison_fn_t = std::function<int(const T &, const T &)>;
+    comparison_fn_t       cmp_;
+    std::unique_ptr<Node> root_;
 
-    explicit AVLTree(comparison_fn_t cmp) : cmp_(std::move(cmp)) {
-    }
-
-    auto insert(T &&item) -> void {
-        root_ = insert_aux(std::move(root_), std::move(item));
-    }
-
-    auto remove(const T &item) -> void {
-        root_ = remove_aux(std::move(root_), item);
-    }
-
-    auto find(Node *src, uint64_t statistic) -> std::optional<T> {
+ private:
+    auto find_aux(Node *src, uint64_t statistic) -> std::optional<T> {
         if (src == nullptr) {
             return std::nullopt;
         }
@@ -112,16 +116,11 @@ class AVLTree {
             return src->value_;
         }
         if (statistic < node_order) {
-            return find(src->left_.get(), statistic);
+            return find_aux(src->left_.get(), statistic);
         }
-        return find(src->right_.get(), statistic - node_order - 1);
+        return find_aux(src->right_.get(), statistic - node_order - 1);
     }
 
-    auto in_order_print() {
-        print(root_.get(), 0);
-    }
-
- private:
     auto print(Node *node, int depth) -> void {
         if (node == nullptr) {
             return;
@@ -236,9 +235,6 @@ class AVLTree {
         src->left_ = remove_min_node(std::move(src->left_));
         return balance(std::move(src));
     }
-
-    comparison_fn_t       cmp_;
-    std::unique_ptr<Node> root_;
 };
 
 #endif  // !AVL_TREE_H
