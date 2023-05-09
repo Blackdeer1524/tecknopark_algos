@@ -15,8 +15,9 @@
 #include <string>
 #include <utility>
 
-using T = int;
+// using T = int;
 
+template <typename T>
 class AVLTree {
  public:
     using comparison_fn_t = std::function<int(const T &, const T &)>;

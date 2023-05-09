@@ -15,24 +15,25 @@ auto basic_cmp(const T &left, const T &right) -> int {
     return 0;
 }
 
-using T = int;
+// using T = int;
 
-class AVLTreeTest : public AVLTree {
+template <typename T>
+class AVLTreeTest : public AVLTree<T> {
  public:
-    explicit AVLTreeTest(AVLTree::comparison_fn_t cmp)
-        : AVLTree(std::move(cmp)) {
+    explicit AVLTreeTest(AVLTree<T>::comparison_fn_t cmp)
+        : AVLTree<T>(std::move(cmp)) {
     }
 
     auto assert_height_property() -> void {
-        assert_height_property_aux(root_.get());
+        assert_height_property_aux(AVLTree<T>::root_.get());
     }
 
     auto assert_tree_property() -> void {
-        assert_tree_property_aux(root_.get());
+        assert_tree_property_aux(AVLTree<T>::root_.get());
     }
 
  private:
-    auto assert_height_property_aux(Node *node) -> void {
+    auto assert_height_property_aux(AVLTree<T>::Node *node) -> void {
         if (node == nullptr) {
             return;
         }
@@ -44,7 +45,7 @@ class AVLTreeTest : public AVLTree {
         assert_height_property_aux(node->right_.get());
     }
 
-    auto assert_tree_property_aux(Node *node) -> void {
+    auto assert_tree_property_aux(AVLTree<T>::Node *node) -> void {
         if (node == nullptr) {
             return;
         }
@@ -61,28 +62,28 @@ class AVLTreeTest : public AVLTree {
 
 // INSERTION
 TEST(ALVinsertions, NoExceptionsDuringSmallInsertionInOrder) {
-    auto test = AVLTreeTest(basic_cmp<int>);
+    auto test = AVLTreeTest<int>(basic_cmp<int>);
     for (int i = 0; i < 10; ++i) {
         EXPECT_NO_THROW(test.insert(std::move(i)));
     }
 }
 
 TEST(ALVinsertions, NoExceptionsDuringSmallInsertionReverseOrder) {
-    auto test = AVLTreeTest(basic_cmp<int>);
+    auto test = AVLTreeTest<int>(basic_cmp<int>);
     for (int i = 10; i > 0; --i) {
         EXPECT_NO_THROW(test.insert(std::move(i)));
     }
 }
 
 TEST(ALVinsertions, NoExceptionsDuringBigInsertionInOrder) {
-    auto test = AVLTreeTest(basic_cmp<int>);
+    auto test = AVLTreeTest<int>(basic_cmp<int>);
     for (int i = 0; i < 100; ++i) {
         EXPECT_NO_THROW(test.insert(std::move(i)));
     }
 }
 
 TEST(ALVinsertions, NoExceptionsDuringBigInsertionReverseOrder) {
-    auto test = AVLTreeTest(basic_cmp<int>);
+    auto test = AVLTreeTest<int>(basic_cmp<int>);
     for (int i = 100; i > 0; --i) {
         EXPECT_NO_THROW(test.insert(std::move(i)));
     }
@@ -90,7 +91,7 @@ TEST(ALVinsertions, NoExceptionsDuringBigInsertionReverseOrder) {
 
 // HEIGHT Property
 TEST(AVLHeight, Small) {
-    auto test = AVLTreeTest(basic_cmp<int>);
+    auto test = AVLTreeTest<int>(basic_cmp<int>);
     for (int i = 10; i > 0; --i) {
         test.insert(std::move(i));
     }
@@ -98,7 +99,7 @@ TEST(AVLHeight, Small) {
 }
 
 TEST(AVLHeight, Big) {
-    auto test = AVLTreeTest(basic_cmp<int>);
+    auto test = AVLTreeTest<int>(basic_cmp<int>);
     for (int i = 100; i > 0; --i) {
         test.insert(std::move(i));
     }
@@ -107,7 +108,7 @@ TEST(AVLHeight, Big) {
 
 // Tree property
 TEST(TreeProperty, Small) {
-    auto test = AVLTreeTest(basic_cmp<int>);
+    auto test = AVLTreeTest<int>(basic_cmp<int>);
     for (int i = 10; i > 0; --i) {
         test.insert(std::move(i));
     }
@@ -115,7 +116,7 @@ TEST(TreeProperty, Small) {
 }
 
 TEST(TreeProperty, Big) {
-    auto test = AVLTreeTest(basic_cmp<int>);
+    auto test = AVLTreeTest<int>(basic_cmp<int>);
     for (int i = 100; i > 0; --i) {
         test.insert(std::move(i));
     }
@@ -124,7 +125,7 @@ TEST(TreeProperty, Big) {
 
 // REMOVE
 TEST(AVLRemove, NoExceptionsSmall) {
-    auto test = AVLTreeTest(basic_cmp<int>);
+    auto test = AVLTreeTest<int>(basic_cmp<int>);
     for (int i = 0; i < 10; ++i) {
         (test.insert(std::move(i)));
     }
@@ -136,7 +137,7 @@ TEST(AVLRemove, NoExceptionsSmall) {
 }
 
 TEST(AVLRemove, NoExceptionsBig) {
-    auto test = AVLTreeTest(basic_cmp<int>);
+    auto test = AVLTreeTest<int>(basic_cmp<int>);
     for (int i = 0; i < 100; ++i) {
         (test.insert(std::move(i)));
     }
@@ -148,7 +149,7 @@ TEST(AVLRemove, NoExceptionsBig) {
 }
 
 TEST(AVLRemove, NoExceptionsSmallReverse) {
-    auto test = AVLTreeTest(basic_cmp<int>);
+    auto test = AVLTreeTest<int>(basic_cmp<int>);
     for (int i = 9; i >= 0; --i) {
         (test.insert(std::move(i)));
     }
@@ -160,7 +161,7 @@ TEST(AVLRemove, NoExceptionsSmallReverse) {
 }
 
 TEST(AVLRemove, NoExceptionsBigReverse) {
-    auto test = AVLTreeTest(basic_cmp<int>);
+    auto test = AVLTreeTest<int>(basic_cmp<int>);
     for (int i = 99; i >= 0; --i) {
         (test.insert(std::move(i)));
     }
@@ -173,7 +174,7 @@ TEST(AVLRemove, NoExceptionsBigReverse) {
 
 // OrderStatistic
 TEST(AVLOrderStatistics, Small) {
-    auto test = AVLTreeTest(basic_cmp<int>);
+    auto test = AVLTreeTest<int>(basic_cmp<int>);
     for (int i = 0; i < 10; ++i) {
         (test.insert(std::move(i)));
     }
@@ -183,7 +184,7 @@ TEST(AVLOrderStatistics, Small) {
 }
 
 TEST(AVLOrderStatistics, SmallReverse) {
-    auto test = AVLTreeTest(basic_cmp<int>);
+    auto test = AVLTreeTest<int>(basic_cmp<int>);
     for (int i = 0; i < 10; ++i) {
         (test.insert(std::move(i)));
     }
@@ -193,7 +194,7 @@ TEST(AVLOrderStatistics, SmallReverse) {
 }
 
 TEST(AVLOrderStatistics, Big) {
-    auto test = AVLTreeTest(basic_cmp<int>);
+    auto test = AVLTreeTest<int>(basic_cmp<int>);
     for (int i = 0; i < 100; ++i) {
         (test.insert(std::move(i)));
     }
@@ -203,7 +204,7 @@ TEST(AVLOrderStatistics, Big) {
 }
 
 TEST(AVLOrderStatistics, BigReverse) {
-    auto test = AVLTreeTest(basic_cmp<int>);
+    auto test = AVLTreeTest<int>(basic_cmp<int>);
     for (int i = 0; i < 100; ++i) {
         (test.insert(std::move(i)));
     }
