@@ -8,6 +8,7 @@
 #include <functional>
 #include <ios>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -26,8 +27,8 @@ class AVLTree {
         };
 
         T                     value_;
-        int                   height_{};
-        uint64_t              size_{};
+        int                   height_{1};
+        uint64_t              size_{1};
         std::unique_ptr<Node> left_;
         std::unique_ptr<Node> right_;
 
@@ -39,8 +40,19 @@ class AVLTree {
             return left_ == nullptr && right_ == nullptr;
         }
 
+        auto fix() -> void {
+            fix_height();
+            fix_size();
+        }
+
         auto fix_height() -> void {
             height_ = std::max(left_->height_, right_->height_) + 1;
+        }
+
+        auto fix_size() -> void {
+            auto left_size  = left_ == nullptr ? 0 : left_->size_;
+            auto right_size = right_ == nullptr ? 0 : right_->size_;
+            size_           = left_size + right_size + 1;
         }
 
         [[nodiscard]] auto bfactor() const -> BALANCING_FACTOR {
@@ -82,12 +94,24 @@ class AVLTree {
         root_ = remove_aux(std::move(root_), item);
     }
 
-    auto find(uint64_t statistic) -> const T &;
+    auto find(Node *src, uint64_t statistic) -> std::optional<T> {
+        if (src == nullptr) {
+            return std::nullopt;
+        }
+        auto node_order = (src->left_ == nullptr) ? 0 : src->left_->size_;
+        if (statistic == node_order) {
+            return src->value_;
+        }
+        if (statistic < node_order) {
+            return find(src->left_.get(), statistic);
+        }
+        return find(src->right_.get(), statistic - node_order - 1);
+    }
 
  private:
     static auto balance(std::unique_ptr<Node> &&balancing_node)
         -> std::unique_ptr<Node> {
-        balancing_node->fix_height();
+        balancing_node->fix();
 
         auto balancing_factor = balancing_node->bfactor();
         if (balancing_factor == Node::BALANCING_FACTOR::POSITIVE_TWO) {
@@ -114,6 +138,9 @@ class AVLTree {
         auto tmp     = std::move(axis->right_);
         axis->right_ = std::move(axis->right_->left_);
         tmp->left_   = std::move(axis);
+
+        tmp->fix();
+        tmp->right_->fix();
         return tmp;
     }
 
@@ -122,10 +149,13 @@ class AVLTree {
         auto tmp    = std::move(axis->left_);
         axis->left_ = std::move(axis->left_->right_);
         tmp->right_ = std::move(axis);
+
+        tmp->fix();
+        tmp->right_->fix();
         return tmp;
     }
 
-    auto insert_aux(std::unique_ptr<Node> dst, T &&item)
+    auto insert_aux(std::unique_ptr<Node> &&dst, T &&item)
         -> std::unique_ptr<Node> {
         if (dst == nullptr) {
             return std::make_unique<Node>(std::move(item));
@@ -156,7 +186,8 @@ class AVLTree {
             }
             if (dst->right_ == nullptr) {
                 dst = std::move(dst->left_);
-                return dst;
+                return dst;  // Можно вернуть т.к. у левого потомка ничего не
+                             // поменялось
             }
             auto min_value = find_min(dst->right_.get());
             dst->right_    = remove_min_node(std::move(dst->right_));
