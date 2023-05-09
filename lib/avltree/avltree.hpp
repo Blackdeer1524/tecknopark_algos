@@ -7,13 +7,15 @@
 #include <cstdlib>
 #include <functional>
 #include <ios>
+#include <iostream>
 #include <memory>
 #include <optional>
+#include <ostream>
 #include <stdexcept>
 #include <string>
 #include <utility>
 
-using T = std::string;
+using T = int;
 
 class AVLTree {
     class Node {
@@ -46,7 +48,9 @@ class AVLTree {
         }
 
         auto fix_height() -> void {
-            height_ = std::max(left_->height_, right_->height_) + 1;
+            auto left_height  = left_ == nullptr ? 0 : left_->height_;
+            auto right_height = right_ == nullptr ? 0 : right_->height_;
+            height_           = std::max(left_height, right_height) + 1;
         }
 
         auto fix_size() -> void {
@@ -56,27 +60,32 @@ class AVLTree {
         }
 
         [[nodiscard]] auto bfactor() const -> BALANCING_FACTOR {
-            if (left_->size_ > right_->size_) {
-                switch (left_->size_ - right_->size_) {
+            auto left_height  = left_ == nullptr ? 0 : left_->height_;
+            auto right_height = right_ == nullptr ? 0 : right_->height_;
+            if (left_height > right_height) {
+                switch (left_height - right_height) {
+                    case 0:
+                        return BALANCING_FACTOR::NEUTRAL;
                     case 1:
                         return BALANCING_FACTOR::POSITIVE_ONE;
                     case 2:
                         return BALANCING_FACTOR::POSITIVE_TWO;
                     default:
-                        throw std::runtime_error("unreachable");
                         break;
                 }
             } else {
-                switch (right_->size_ - left_->size_) {
+                switch (right_height - left_height) {
+                    case 0:
+                        return BALANCING_FACTOR::NEUTRAL;
                     case 1:
                         return BALANCING_FACTOR::NEGATIVE_ONE;
                     case 2:
                         return BALANCING_FACTOR::NEGATIVE_TWO;
                     default:
-                        throw std::runtime_error("unreachable");
                         break;
                 }
             }
+            throw std::runtime_error("unreachable");
         }
     };
 
@@ -108,23 +117,40 @@ class AVLTree {
         return find(src->right_.get(), statistic - node_order - 1);
     }
 
+    auto in_order_print() {
+        print(root_.get(), 0);
+    }
+
  private:
+    auto print(Node *node, int depth) -> void {
+        if (node == nullptr) {
+            return;
+        }
+        print(node->right_.get(), depth + 1);
+        for (int i = 0; i < depth; ++i) {
+            std::cout << "\t  ";
+        }
+        std::cout << '(' << node->value_ << "," << node->height_ << ","
+                  << node->size_ << ')';
+        std::cout << std::endl;
+        print(node->left_.get(), depth + 1);
+    }
+
     static auto balance(std::unique_ptr<Node> &&balancing_node)
         -> std::unique_ptr<Node> {
         balancing_node->fix();
 
         auto balancing_factor = balancing_node->bfactor();
         if (balancing_factor == Node::BALANCING_FACTOR::POSITIVE_TWO) {
-            if (balancing_node->left_->right_->height_ >
-                balancing_node->left_->left_->height_) {
+            if (balancing_node->left_->bfactor() ==
+                Node::BALANCING_FACTOR::NEGATIVE_ONE) {
                 balancing_node->left_ =
                     rotate_left(std::move(balancing_node->left_));
             }
             balancing_node = rotate_right(std::move(balancing_node));
-        }
-        if (balancing_factor == Node::BALANCING_FACTOR::NEGATIVE_TWO) {
-            if (balancing_node->right_->left_->height_ >
-                balancing_node->right_->right_->height_) {
+        } else if (balancing_factor == Node::BALANCING_FACTOR::NEGATIVE_TWO) {
+            if (balancing_node->right_->bfactor() ==
+                Node::BALANCING_FACTOR::POSITIVE_ONE) {
                 balancing_node->right_ =
                     rotate_right(std::move(balancing_node->right_));
             }
@@ -136,22 +162,22 @@ class AVLTree {
     static auto rotate_left(std::unique_ptr<Node> &&axis)
         -> std::unique_ptr<Node> {
         auto tmp     = std::move(axis->right_);
-        axis->right_ = std::move(axis->right_->left_);
+        axis->right_ = std::move(tmp->left_);
         tmp->left_   = std::move(axis);
 
+        tmp->left_->fix();
         tmp->fix();
-        tmp->right_->fix();
         return tmp;
     }
 
     static auto rotate_right(std::unique_ptr<Node> &&axis)
         -> std::unique_ptr<Node> {
         auto tmp    = std::move(axis->left_);
-        axis->left_ = std::move(axis->left_->right_);
+        axis->left_ = std::move(tmp->right_);
         tmp->right_ = std::move(axis);
 
-        tmp->fix();
         tmp->right_->fix();
+        tmp->fix();
         return tmp;
     }
 
