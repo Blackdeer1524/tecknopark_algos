@@ -31,3 +31,5 @@ add_custom_target(
 add_subdirectory(lib)
 add_executable(main main.cpp)
 target_link_libraries(main avltree)
+
+add_executable(submission submission.cpp)
