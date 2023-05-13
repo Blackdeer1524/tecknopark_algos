@@ -13,9 +13,9 @@ struct Node {
     explicit Node(int value) : value_(value), left_(nullptr), right_(nullptr) {
     }
 
-    int                   value_;
-    std::unique_ptr<Node> left_;
-    std::unique_ptr<Node> right_;
+    int   value_;
+    Node *left_;
+    Node *right_;
 };
 
 class BinaryTree {
@@ -24,41 +24,60 @@ class BinaryTree {
         : cmp_(std::move(cmp)) {
     }
 
-    auto insert(int value) -> void {
-        if (root == nullptr) {
-            auto *node = new Node(value);
-            root.reset(node);
+    ~BinaryTree() {
+        if (root_ == nullptr) {
             return;
         }
-        auto *parent  = root.get();
-        auto *current = root.get();
+        auto deletion_stack = std::stack<Node *>();
+        deletion_stack.push(root_);
+        while (!deletion_stack.empty()) {
+            auto *node = deletion_stack.top();
+            deletion_stack.pop();
+            if (node->left_ != nullptr) {
+                deletion_stack.push(node->left_);
+            }
+            if (node->right_ != nullptr) {
+                deletion_stack.push(node->right_);
+            }
+            delete node;
+        }
+    }
+
+    auto insert(int value) -> void {
+        if (root_ == nullptr) {
+            auto *node = new Node(value);
+            root_      = node;
+            return;
+        }
+        auto *parent  = root_;
+        auto *current = root_;
         while (current != nullptr) {
             parent = current;
             if (cmp_(value, current->value_) >= 0) {
-                current = current->right_.get();
+                current = current->right_;
             } else {
-                current = current->left_.get();
+                current = current->left_;
             }
         }
         auto *new_node = new Node(value);
         if (cmp_(value, parent->value_) >= 0) {
-            parent->right_.reset(new_node);
+            parent->right_ = new_node;
         } else {
-            parent->left_.reset(new_node);
+            parent->left_ = new_node;
         }
     }
 
     auto print() -> void {
-        if (root == nullptr) {
+        if (root_ == nullptr) {
             return;
         }
 
         auto  printing_stack = std::stack<Node *>();
-        auto *current        = root.get();
+        auto *current        = root_;
         for (;;) {
             while (current != nullptr) {
                 printing_stack.push(current);
-                current = current->left_.get();
+                current = current->left_;
             }
             if (printing_stack.empty()) {
                 break;
@@ -66,12 +85,12 @@ class BinaryTree {
             current = printing_stack.top();
             printing_stack.pop();
             std::cout << current->value_ << ' ';
-            current = current->right_.get();
+            current = current->right_;
         }
     }
 
  private:
-    std::unique_ptr<Node>        root = nullptr;
+    Node                        *root_ = nullptr;
     std::function<int(int, int)> cmp_;
 };
 
