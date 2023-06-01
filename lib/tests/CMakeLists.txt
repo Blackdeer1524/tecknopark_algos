@@ -5,6 +5,9 @@ add_executable(
 target_link_libraries(
     ArcGraph_tests
     ArcGraph
+    ListGraph
+    MatrixGraph
+    SetGraph
     GTest::gtest_main
 )
 
@@ -17,7 +20,10 @@ add_executable(
 )
 target_link_libraries(
     ListGraph_tests
+    ArcGraph
     ListGraph
+    MatrixGraph
+    SetGraph
     GTest::gtest_main
 )
 
@@ -29,7 +35,10 @@ add_executable(
 )
 target_link_libraries(
     MatrixGraph_tests
+    ArcGraph
+    ListGraph
     MatrixGraph
+    SetGraph
     GTest::gtest_main
 )
 
@@ -42,6 +51,9 @@ add_executable(
 )
 target_link_libraries(
     SetGraph_tests
+    ArcGraph
+    ListGraph
+    MatrixGraph
     SetGraph
     GTest::gtest_main
 )
