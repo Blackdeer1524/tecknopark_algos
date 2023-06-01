@@ -20,14 +20,9 @@ SetGraph::SetGraph(const IGraph &graph) : SetGraph(graph.vertices_count()) {
 }
 
 auto SetGraph::add_edge(int from, int to) -> void {
-    assert(from >= 0);
-    assert(to >= 0);
+    assert(0 <= from && from < vertices_count());
+    assert(0 <= to && to < vertices_count());
 
-    auto max_dim = std::max(from, to);
-    if (next_vertecies_.size() <= max_dim) {
-        next_vertecies_.resize(max_dim + 1);
-        prev_vertecies_.resize(max_dim + 1);
-    }
     next_vertecies_[from].insert(to);
     prev_vertecies_[to].insert(from);
 }

@@ -20,4 +20,3 @@ add_custom_target(
 
 add_subdirectory(lib)
 add_executable(main main.cpp)
-

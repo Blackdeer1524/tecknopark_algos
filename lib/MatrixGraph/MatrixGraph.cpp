@@ -24,17 +24,11 @@ MatrixGraph::MatrixGraph(const IGraph &graph)
 }
 
 auto MatrixGraph::add_edge(int from, int to) -> void {
-    assert(from >= 0);
-    assert(to >= 0);
+    assert(0 <= from && from < vertices_count());
+    assert(0 <= to && to < vertices_count());
 
-    auto max_dim = std::max(from, to);
-    if (adjacency_matrix_.size() <= max_dim) {
-        for (auto &row : adjacency_matrix_) {
-            row.resize(max_dim + 1);
-        }
-        adjacency_matrix_.resize(max_dim + 1);
-    }
     adjacency_matrix_[from][to] = true;
+    adjacency_matrix_[to][from] = true;
 }
 
 auto MatrixGraph::vertices_count() const -> int {
@@ -54,7 +48,7 @@ auto MatrixGraph::get_next_vertices(int vertex) const -> std::vector<int> {
 }
 
 auto MatrixGraph::get_prev_vertices(int vertex) const -> std::vector<int> {
-    assert(vertex >= 0);
+    assert(vertex >= 0 && vertex < vertices_count());
 
     auto res = std::vector<int>();
     for (int i = 0; i < adjacency_matrix_.size(); ++i) {
