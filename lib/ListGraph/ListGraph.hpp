@@ -8,11 +8,13 @@ class ListGraph : public IGraph {
     explicit ListGraph(int vertexCount);
     explicit ListGraph(const IGraph &graph);
 
-    // IGraph
     void               add_edge(int from, int to) override;
+
     [[nodiscard]] auto vertices_count() const -> int override;
+
     [[nodiscard]] auto get_next_vertices(int vertex) const
         -> std::vector<int> override;
+
     [[nodiscard]] auto get_prev_vertices(int vertex) const
         -> std::vector<int> override;
 

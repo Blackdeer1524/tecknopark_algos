@@ -2,9 +2,26 @@
 #include "IGraph.hpp"
 #include <algorithm>
 #include <cassert>
+#include <cstdint>
 #include <iterator>
 #include <ranges>
 #include <vector>
+
+MatrixGraph::MatrixGraph(uint64_t vertex_count) {
+    adjacency_matrix_.resize(vertex_count);
+    for (auto &row : adjacency_matrix_) {
+        row.resize(vertex_count);
+    }
+}
+
+MatrixGraph::MatrixGraph(const IGraph &graph)
+    : MatrixGraph(graph.vertices_count()) {
+    for (int vertex = 0; vertex < graph.vertices_count(); ++vertex) {
+        for (auto next_vertex : graph.get_next_vertices(vertex)) {
+            add_edge(vertex, next_vertex);
+        }
+    }
+}
 
 auto MatrixGraph::add_edge(int from, int to) -> void {
     assert(from >= 0);
@@ -25,7 +42,7 @@ auto MatrixGraph::vertices_count() const -> int {
 }
 
 auto MatrixGraph::get_next_vertices(int vertex) const -> std::vector<int> {
-    assert(vertex >= 0);
+    assert(vertex >= 0 && vertex < vertices_count());
 
     auto res = std::vector<int>();
     for (int i = 0; i < adjacency_matrix_.size(); ++i) {
@@ -46,12 +63,4 @@ auto MatrixGraph::get_prev_vertices(int vertex) const -> std::vector<int> {
         }
     }
     return res;
-}
-
-MatrixGraph::MatrixGraph(const IGraph &graph) {
-    for (int vertex = 0; vertex < graph.vertices_count(); ++vertex) {
-        for (auto next_vertex : graph.get_next_vertices(vertex)) {
-            add_edge(vertex, next_vertex);
-        }
-    }
 }

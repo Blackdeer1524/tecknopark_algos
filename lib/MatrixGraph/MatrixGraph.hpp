@@ -2,13 +2,14 @@
 #define MATRIX_GRAPH_HPP
 
 #include "IGraph.hpp"
+#include <cstdint>
 #include <vector>
 
 class MatrixGraph : public IGraph {
  public:
-    explicit MatrixGraph(const IGraph &graph);
+    explicit MatrixGraph(uint64_t vertex_count);
 
-    MatrixGraph() = default;
+    explicit MatrixGraph(const IGraph &graph);
 
     void               add_edge(int from, int to) override;
 
