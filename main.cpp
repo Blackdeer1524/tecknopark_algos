@@ -1,75 +1,68 @@
-#include <algorithm>
 #include <cstdint>
-#include <deque>
-#include <forward_list>
-#include <limits>
-#include <memory>
-#include <unordered_map>
+#include <iostream>
+#include <queue>
+#include <sys/types.h>
+#include <vector>
 
-enum class Color { WHITE, BLACK };
+auto breadth_first_search(const std::vector<std::vector<int>> &adjecency_list,
+                          int                                  start,
+                          int                                  end) -> int {
+    auto              graph_order = adjecency_list.size();
+    std::vector<int>  min_distances(graph_order, -1);
+    std::vector<int>  ways(graph_order, 0);
+    std::vector<bool> already_seen(graph_order, false);
 
-class Vertex {
-    using neighbours_list = std::forward_list<std::shared_ptr<Vertex>>;
+    min_distances[start] = 0;
+    ways[start]          = 1;
 
- public:
-    explicit Vertex(int name) : name_(name) {
-    }
-
-    [[nodiscard]] constexpr auto color() const -> Color {
-        return color_;
-    }
-
-    [[nodiscard]] constexpr auto name() const -> int {
-        return name_;
-    }
-
-    auto neighbours() -> Vertex::neighbours_list {
-        return neighbours_;
-    }
-
-    auto set_color(Color color) -> void {
-        color_ = color;
-    }
-
- private:
-    int                                        name_;
-    Color                                      color_{Color::WHITE};
-    std::forward_list<std::shared_ptr<Vertex>> neighbours_;
-};
-
-using AdjListT = std::unordered_map<int, std::shared_ptr<Vertex>>;
-
-auto breadth_first_search(AdjListT &&adj_list, int start, int end) -> uint64_t {
-    auto adjacency_list = std::move(adj_list);
-    auto start_vertex   = adjacency_list[start];
-    auto vertecies = std::deque<std::pair<std::shared_ptr<Vertex>, uint64_t>>();
-    uint64_t counter   = 0;
-    uint64_t min_depth = std::numeric_limits<uint64_t>::max();
-    vertecies.emplace_front(start_vertex, 0);
-    while (!vertecies.empty()) {
-        auto [vertex, depth] = vertecies.front();
-        vertecies.pop_front();
-        if (vertex->color() == Color::BLACK) {
+    min_distances[start] = 0;
+    ways[start]          = 1;
+    std::queue<int> q{};
+    q.push(start);
+    while (!q.empty()) {
+        auto current = q.front();
+        q.pop();
+        if (already_seen[current]) {
             continue;
         }
-        if (vertex->name() == end) {
-            if (depth > min_depth) {
-                break;
+        already_seen[current] = true;
+        for (auto next : adjecency_list[current]) {
+            if (min_distances[next] == -1) {
+                min_distances[next] = min_distances[current] + 1;
+                ways[next]          = ways[current];
+            } else if (min_distances[next] == min_distances[current] + 1) {
+                ways[next] += ways[current];
             }
-            min_depth = depth;
-            ++counter;
-        } else {
-            vertex->set_color(Color::BLACK);
-            for (auto item : vertex->neighbours()) {
-                vertecies.emplace_back(item, depth + 1);
+            if (!already_seen[next]) {
+                q.push(next);
             }
         }
     }
-    return counter;
+    return ways[end];
 }
 
 auto main() -> int {
-    auto adjacency_list = AdjListT();
+    uint64_t v;
+    uint64_t m;
 
-    return 0;
+    std::cin >> v >> m;
+
+    std::vector<std::vector<int>> adjecency_list(v);
+
+    for (uint64_t i = 0; i < m; ++i) {
+        int first;
+        int second;
+        std::cin >> first >> second;
+
+        adjecency_list[first].push_back(second);
+        adjecency_list[second].push_back(first);
+    }
+
+    int start;
+    int end;
+    std::cin >> start >> end;
+
+    auto res = breadth_first_search(adjecency_list, start, end);
+
+    std::cout << res << std::endl;
 }

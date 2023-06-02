@@ -19,3 +19,5 @@ add_custom_target(
     memcheck
     COMMAND cat "${CMAKE_BINARY_DIR}/Testing/Temporary/MemoryChecker.*.log"
     WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
+
+add_executable(main main.cpp)
