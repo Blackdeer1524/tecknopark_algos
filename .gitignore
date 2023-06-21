@@ -1,4 +1,7 @@
 *
+!*/
+build
+!img/*
 !.gitignore
 !README.md
 !main.cpp
