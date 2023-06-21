@@ -11,23 +11,23 @@
 #include <vector>
 
 struct Position {
-    Position(int row, int col) : row_(row), col_(col) {
+    Position(int64_t row, int64_t col) : row_(row), col_(col) {
     }
 
-    [[nodiscard]] auto row() const -> int {
+    [[nodiscard]] auto row() const -> int64_t {
         return row_;
     }
 
-    [[nodiscard]] auto col() const -> int {
+    [[nodiscard]] auto col() const -> int64_t {
         return col_;
     }
 
  private:
-    int row_;
-    int col_;
+    int64_t row_;
+    int64_t col_;
 };
 
-using Field_T = std::array<std::array<int, 4>, 4>;
+using Field_T = std::array<std::array<int64_t, 4>, 4>;
 
 enum class SwapDirection { UP, DOWN, LEFT, RIGHT };
 
@@ -61,16 +61,16 @@ struct State {
         return this_heuristic > other_heuristic;
     }
 
-    [[nodiscard]] auto heuristic() const -> int {
-        int res = 0;
-        for (int i = 0; i < 4; ++i) {
-            for (int j = 0; j < 4; ++j) {
+    [[nodiscard]] auto heuristic() const -> int64_t {
+        int64_t res = 0;
+        for (int64_t i = 0; i < 4; ++i) {
+            for (int64_t j = 0; j < 4; ++j) {
                 if (field[i][j] == 0) {
                     continue;
                 }
-                int i2  = (field[i][j] - 1) / 4;
-                int j2  = (field[i][j] - 1) % 4;
-                res    += abs(i - i2) + abs(j - j2);
+                int64_t i2  = (field[i][j] - 1) / 4;
+                int64_t j2  = (field[i][j] - 1) % 4;
+                res        += abs(i - i2) + abs(j - j2);
             }
         }
         return res;
@@ -82,9 +82,9 @@ struct State {
 };
 
 // Хранение посещенных состояний
-std::map<Field_T, bool>          visited;
+std::map<Field_T, bool>                  visited;
 
-std::vector<std::pair<int, int>> moves = {
+std::vector<std::pair<int64_t, int64_t>> moves = {
     {-1,  0},
     { 1,  0},
     { 0, -1},
@@ -92,7 +92,7 @@ std::vector<std::pair<int, int>> moves = {
 };
 
 // Проверка возможности хода
-auto valid_move(int i, int j) -> bool {
+auto valid_move(int64_t i, int64_t j) -> bool {
     return i >= 0 && j >= 0 && i < 4 && j < 4;
 }
 
@@ -105,13 +105,13 @@ auto make_move(State s, Position empty, Position actual) -> State {
     auto col_diff = actual.col() - empty.col();
 
     if (row_diff < 0) {
-        s.steps.emplace_back(SwapDirection::UP);
-    } else if (row_diff > 0) {
         s.steps.emplace_back(SwapDirection::DOWN);
+    } else if (row_diff > 0) {
+        s.steps.emplace_back(SwapDirection::UP);
     } else if (col_diff > 0) {
-        s.steps.emplace_back(SwapDirection::RIGHT);
-    } else {
         s.steps.emplace_back(SwapDirection::LEFT);
+    } else {
+        s.steps.emplace_back(SwapDirection::RIGHT);
     }
     s.empty_tile_pos = actual;
     return s;
@@ -134,8 +134,8 @@ auto solve(State start) -> std::optional<std::vector<SwapDirection>> {
         }
 
         for (auto &move : moves) {
-            int ni = empty_tile_pos.row() + move.first;
-            int nj = empty_tile_pos.col() + move.second;
+            int64_t ni = empty_tile_pos.row() + move.first;
+            int64_t nj = empty_tile_pos.col() + move.second;
             if (valid_move(ni, nj)) {
                 State next = make_move(cur, empty_tile_pos, {ni, nj});
                 if (!visited[next.field]) {
@@ -151,20 +151,20 @@ auto solve(State start) -> std::optional<std::vector<SwapDirection>> {
 }
 
 auto main() -> int {
-    int test[4][4]{
-        { 1,  2,  3,  4},
-        { 5,  6,  7,  8},
-        { 9, 10, 11, 12},
-        {13, 14, 15,  0}
-    };
+    // int64_t test[4][4]{
+    //     { 1,  2,  3,  4},
+    //     { 5,  6,  7,  8},
+    //     { 9, 10, 11, 12},
+    //     {13, 14, 15,  0}
+    // };
 
     Field_T  field;
     Position empty{0, 0};
-    // start.field = std::array<std::array<int, 4>, 4>{};
-    for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            // cin >> start.field[i][j];
-            field[i][j] = test[i][j];
+    // start.field = std::array<std::array<int64_t, 4>, 4>{};
+    for (int64_t i = 0; i < 4; ++i) {
+        for (int64_t j = 0; j < 4; ++j) {
+            std::cin >> field[i][j];
+            // field[i][j] = test[i][j];
             if (field[i][j] == 0) {
                 empty = {i, j};
             }
