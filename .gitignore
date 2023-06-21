@@ -1,5 +1,8 @@
 *
+!*/
+/build
 !CMakeLists.txt
+!/img/*
 !.gitignore
 !README.md
 !main.cpp
